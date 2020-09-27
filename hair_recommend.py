@@ -26,7 +26,7 @@ def get_face(img):
     faces=cascade.detectMultiScale(img, scaleFactor=1.1, minNeighbors=1, minSize=(10,10))
     # 顔認識出来なかった場合
     if len(faces) == 0:
-        face = faces
+        face = img
     # 顔認識出来た場合
     else:
         # 顔部分画像を取得
