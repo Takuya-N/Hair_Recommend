@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>髪型おすすめアプリ</title>
+    <link rel='stylesheet' href='./static/stylesheet.css'>
+</head>
+<body>
+    <header>
+        <img class='header-logo' src= >
+        <h2 class='header-title'>おススメの髪型を判定</h2>
+
+        {% if message=="ログインできました" %}
+        <span>ログイン中です</span>
+
+        {% else %} {% endif %}
+       
+    </header>
+    <div class='main'>
+      <button type="submit">
+        <a class="link-text" href="{{ url_for('login')}}">ログイン</a>
+      </button>
+
+      <button type="submit">
+        <a class="link-text" href="{{ url_for('register')}}">登録</a>
+      </button>
+
+      <button type="submit">
+        <a class="link-text" href="/logout">ログアウト</a>
+      </button>
+        <h2>送信された画像を基にお勧めの髪型を判定します</h2>
+        <p>正面の顔が映った写真を送信してください</p>
+        <form method='POST' enctype="multipart/form-data">
+        <input class='file_choose' type="file" name='file'>
+        <input class='btn' value='判定する' type='submit'>
+        </form>
+        <p>{{message}}</p>
+        <img class='img_upload' src='{{imagepath}}'>
+        <p class='answer'>{{answer}}</p> 
+    </div>
+    <footer>
+        <p>&copy;2020 Takuya Naoi.</p>
+    </footer>
+</body>
+</html>
