@@ -23,8 +23,11 @@ image_size = 64
 UPLOAD_FOLDER = "uploads"
 ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg', 'gif'])
 
+
+
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
 def get_face(img):
     img_gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
     cascade_path = "haarcascade_frontalface_alt.xml"
@@ -38,7 +41,7 @@ def get_face(img):
         for x,y,w,h in faces:
             face = img[y:y+h, x:x+w]
         face = cv2.resize(face, (image_size, image_size))
-    pil_crop = Image.fromarray(face[:, :, ::-1])#Opencv to PIL
+    pil_crop = Image.fromarray(face[:, :, ::-1])
     return pil_crop
 
 class User(db.Model):
@@ -59,6 +62,7 @@ class User(db.Model):
         self.bouzu_c = 0
         self.long_c = 0
         self.mash_c = 0
+        self.pama_c = 0
         self.two_block_c = 0
 
 class History(db.Model):
@@ -68,17 +72,10 @@ class History(db.Model):
 
     def __init__(self, hair_name,counts):
         self.hair_name = hair_name
-        self.counts = counts
+        self.counts = 0
 
-def print_all_history(session):
-    hairs = History.query.all()
-    total = 0
-    for hair in hairs:
-        total += hair.counts
-        print(hair.id ,hair.hair_name ,hair.counts)
-    return total    
 
-model = load_model('./model.h5')#学習済みモデルをロードする
+model = load_model('./model.h5')
 graph = tf.get_default_graph()
 
 
@@ -103,7 +100,8 @@ def login():
         p = request.form['password']
         data = User.query.filter_by(username=u, password=p).first()
         if data is not None:
-            session['logged_in']=True
+            session['logged_in'] = True
+            session['user_name'] = u
             return redirect(url_for('upload_file'))
         return render_template('login.html', message="login_fail")    
 
@@ -132,21 +130,45 @@ def upload_file():
                 #変換したデータをモデルに渡して予測する
                 result = model.predict(data)[0]
                 predicted = result.argmax()
-                 #エラー出る可能性あります
-                hit_hair_info = History.query.filter_by(hair_name=classes[predicted]).first()
-                hit_hair_info.counts+=1 
-                total = print_all_history(session)
-                db.session.commit()
-
-                pred_answer = "あなたのおすすめは " + classes[predicted] + " です"
+                #合計結果の処理
+                total = 0
                 hairs = History.query.all()
-                comment = '合計{}回'.format(str(total))
-                comment_all = 'ボウズ{}回、ロング{}回、マッシュ{}回、パーマ{}回、ツーブロック{}回'.format(str(hairs[0].counts),
-                                                                                                       str(hairs[1].counts),
-                                                                                                       str(hairs[2].counts),
-                                                                                                       str(hairs[3].counts),
-                                                                                                       str(hairs[4].counts))
-                return render_template("index.html",answer=pred_answer, comment=comment, allcomment=comment_all)
+                hit_hair = History.query.filter_by(hair_name=classes[predicted]).first()
+                hit_hair.counts += 1 
+                for hair in hairs:
+                    total += hair.counts
+                db.session.commit()
+                #ユーザーデータの処理
+                user_data = User.query.filter_by(username =session['user_name']).first()
+                user_data.counts += 1
+                if predicted == 0:
+                    user_data.bouzu_c += 1
+                elif predicted == 1:
+                    user_data.long_c += 1
+                elif predicted == 2:
+                    user_data.mash_c += 1
+                elif predicted == 2:
+                    user_data.pama_c += 1
+                else:
+                    user_data.two_block_c += 1
+                db.session.commit()
+                user_data = User.query.filter_by(username =session['user_name']).first()   
+                #結果の表示
+                pred_answer = '{}さんのおすすめは{}です'.format(user_data.username,classes[predicted])
+                comment = '{}さんの合計{}回'.format(user_data.username,str(user_data.counts))
+                comment_all = 'ボウズ{}回、ロング{}回、マッシュ{}回、パーマ{}回、ツーブロック{}回'.format(str(user_data.bouzu_c),
+                                                                                                       str(user_data.long_c),
+                                                                                                       str(user_data.mash_c),
+                                                                                                       str(user_data.pama_c),
+                                                                                                       str(user_data.two_block_c))
+                comment2 = 'みんなの合計{}回'.format(str(total))
+                comment_all2 = 'ボウズ{}%、ロング{}%、マッシュ{}%、パーマ{}%、ツーブロック{}%'.format(str(hairs[0].counts*100//total),
+                                                                                                       str(hairs[1].counts*100//total),
+                                                                                                       str(hairs[2].counts*100//total),
+                                                                                                       str(hairs[3].counts*100//total),
+                                                                                                       str(hairs[4].counts*100//total))
+                
+                return render_template("index.html",answer=pred_answer, comment=comment, allcomment=comment_all,comment2=comment2, allcomment2=comment_all2)
         return render_template("index.html",answer="")
 
 @app.route('/logout', methods=['GET'])
