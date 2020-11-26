@@ -20,7 +20,7 @@ db = SQLAlchemy(app)
 classes = ['ボウズ', 'ロング', 'マッシュ', 'パーマ', 'ツーブロック']
 num_classes = len(classes)
 image_size = 64
-UPLOAD_FOLDER = "uploads"
+UPLOAD_FOLDER = "static"
 ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg', 'gif'])
 model = load_model('./model.h5')
 graph = tf.get_default_graph()
@@ -178,8 +178,9 @@ def upload_file():
                                                                                                        str(hairs[2].counts*100//total),
                                                                                                        str(hairs[3].counts*100//total),
                                                                                                        str(hairs[4].counts*100//total))
-                
-                return render_template("index.html",answer=pred_answer, comment=comment, allcomment=comment_all,comment2=comment2, allcomment2=comment_all2)
+                print(filepath)
+                return render_template("index.html",answer=pred_answer, comment=comment, allcomment=comment_all,comment2=comment2, allcomment2=comment_all2,
+                                                    filepath=filepath)
         return render_template("index.html",answer="")
 #ログアウト機能
 @app.route('/logout', methods=['GET'])
