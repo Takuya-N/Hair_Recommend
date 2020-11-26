@@ -1,1 +1,1 @@
-web: python hair_recommend.py
+web: python main.py
