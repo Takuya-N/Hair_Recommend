@@ -4,6 +4,7 @@ from werkzeug.utils import secure_filename
 from keras.models import Sequential, load_model
 from keras.preprocessing import image
 import tensorflow as tf
+import matplotlib.pyplot as plt
 from PIL import Image
 import numpy as np
 import cv2
@@ -12,6 +13,9 @@ from werkzeug.utils import secure_filename
 from keras.models import Sequential, load_model
 from keras.preprocessing import image
 import tensorflow as tf
+from matplotlib import rcParams
+rcParams['font.family'] = 'sans-serif'
+rcParams['font.sans-serif'] = ['Hiragino Maru Gothic Pro', 'Yu Gothic', 'Meirio', 'Takao', 'IPAexGothic', 'IPAPGothic', 'Noto Sans CJK JP']
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
@@ -178,9 +182,18 @@ def upload_file():
                                                                                                        str(hairs[2].counts*100//total),
                                                                                                        str(hairs[3].counts*100//total),
                                                                                                        str(hairs[4].counts*100//total))
-                print(filepath)
+                graph_data = [hairs[0].counts*100//total, hairs[1].counts*100//total, hairs[2].counts*100//total, hairs[3].counts*100//total, hairs[4].counts*100//total]
+                print(graph_data)
+                graph_labels = classes
+                fig = plt.figure()
+                plt.pie(graph_data, labels=graph_labels)
+                plt.axis('equal')
+                savename = 'static/' + 'result.png'
+                os.remove('static/result.png')
+                fig.savefig(savename)
+
                 return render_template("index.html",answer=pred_answer, comment=comment, allcomment=comment_all,comment2=comment2, allcomment2=comment_all2,
-                                                    filepath=filepath)
+                                                    filepath=filepath, graph=savename)
         return render_template("index.html",answer="")
 #ログアウト機能
 @app.route('/logout', methods=['GET'])
@@ -207,7 +220,7 @@ if(__name__ == "__main__"):
             db.session.add(History(hair_name=hair, counts=0) )
         db.session.commit()
     #deploy用
-    port = int(os.environ.get('PORT', 8080))
-    app.run(host ='0.0.0.0',port = port)
+    #port = int(os.environ.get('PORT', 8080))
+    #app.run(host ='0.0.0.0',port = port)
     #ローカル用
-    #app.run(debug=True)
+    app.run(debug=True)
