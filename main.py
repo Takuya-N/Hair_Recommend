@@ -145,6 +145,7 @@ def upload_file():
                 #変換したデータをモデルに渡して予測する
                 result = model.predict(data)[0]
                 predicted = result.argmax()
+                os.remove(filepath)
                 #合計結果の処理
                 total = 0
                 hairs = History.query.all()
@@ -220,7 +221,7 @@ if(__name__ == "__main__"):
             db.session.add(History(hair_name=hair, counts=0) )
         db.session.commit()
     #deploy用
-    #port = int(os.environ.get('PORT', 8080))
-    #app.run(host ='0.0.0.0',port = port)
+    port = int(os.environ.get('PORT', 8080))
+    app.run(host ='0.0.0.0',port = port)
     #ローカル用
-    app.run(debug=True)
+    #app.run(debug=True)
